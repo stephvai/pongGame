@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> practice game</title>
+    <style>
+        * {
+            padding: 0px;
+            margin: 0px
+        }
+
+        canvas {
+            background: #eee;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+
+</head>
+<body>
+
+<canvas id="myCanvas" width="480" height="320"></canvas>
+
+<script>
+
+    "use strict";
+
+    var canvas = document.getElementById("myCanvas");
+    var ctx = canvas.getContext("2d");
+    var ballX = canvas.width / 2;
+    var ballY = canvas.height - 20;
+    var ballOffX = 5;
+    var ballOffY = -5;
+    var radius = 8;
+    var paddleWidth = canvas.width / 7;
+    var countdown = 3;
+    var id;
+
+    function startCountdown(){
+
+        if(countdown==3)
+        id= setInterval(function(){drawCountdown()}, 700);
+
+
+        function drawCountdown(){
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font="30px Georgia bold";
+            ctx.fillStyle="black";
+            ctx.fillText(countdown.toString(), canvas.width/2, (canvas.height-30) /2 );
+            countdown -=1;
+
+            if (countdown ==-1){
+                clearInterval(id);
+                draw();
+            }
+        }
+    }
+
+    /*
+     These are the two plates that we will be manipulating on the screen
+     */
+    var player1 = {
+        x: canvas.width / 2 - 20,
+        y: 2,
+        score: 0,
+        moveRight: false,
+        moveLeft: false,
+        winner:false
+    };
+
+    var player2 = {
+        x: canvas.width / 2 - 20,
+        y: canvas.height - 10,
+        score: 0,
+        moveRight: false,
+        moveLeft: false,
+        winner:false
+    };
+
+
+    /*
+     move plates base on user input
+     */
+    document.addEventListener("keydown", handleKeyDown, false);
+    document.addEventListener("keyup", handleKeyUp, false);
+
+    function handleKeyDown(event) {
+
+        switch (event.key) {
+
+            case "ArrowRight":
+                player1.moveRight = true;
+                break;
+
+            case "ArrowLeft":
+                player1.moveLeft = true;
+                break;
+
+            case "a":
+                player2.moveLeft = true;
+                break;
+            case "d":
+                player2.moveRight = true;
+                break;
+
+            default:
+                return;
+        }
+    }
+
+
+    function handleKeyUp(event) {
+
+        switch (event.key) {
+
+            case "ArrowRight":
+                player1.moveRight = false;
+                break;
+
+            case "ArrowLeft":
+                player1.moveLeft = false;
+                break;
+
+            case "a":
+                player2.moveLeft = false;
+                break;
+
+            case "d":
+                player2.moveRight = false;
+                break;
+
+            default:
+                return;
+        }
+    }
+
+
+    function movePaddle() {
+        if (player1.moveRight == true && (player1.x + paddleWidth) < canvas.width) {
+            player1.x += 7;
+        }
+
+        else if (player1.moveLeft == true && player1.x > 0) {
+            player1.x -= 7;
+        }
+
+        if (player2.moveRight == true && (player2.x + paddleWidth) < canvas.width) {
+            player2.x += 7;
+        }
+
+        else if (player2.moveLeft == true && player2.x > 0) {
+            player2.x -= 7;
+        }
+    }
+
+    function drawPaddle() {
+        movePaddle();
+        ctx.beginPath();
+        ctx.rect(player1.x, player1.y, paddleWidth, 8);
+        ctx.fillStyle = "blue";
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.beginPath();
+        ctx.rect(player2.x, player2.y, paddleWidth, 8);
+        ctx.fillStyle = "green";
+        ctx.fill();
+        ctx.closePath();
+
+    }
+
+
+    function drawBall() {
+        moveBall();
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, radius, 0, 2 * Math.PI);
+        ctx.fillStyle = "red";
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    function moveBall() {
+        if (ballX + radius > canvas.width || ballX - radius < 0) {
+            ballOffX = -ballOffX;
+        }
+
+
+        if (ballY - radius < -1) {
+            player2.score += 1;
+            reset();
+            return;
+        }
+
+        else if (ballY + radius > canvas.height) {
+            player1.score += 1;
+            reset();
+            return;
+        }
+
+
+        /*
+         The following code is handling the collision of the ball with the paddle
+         */
+
+        /*
+         player 1 paddle
+         */
+        if (ballY + ballOffY < radius) {
+            if (ballX > player1.x && ballX < player1.x + paddleWidth) {
+                ballOffY = -ballOffY;
+            }
+        }
+
+        /*
+         player 2 paddle
+         */
+
+        else if (ballY + ballOffY > canvas.height - radius) {
+            if (ballX > player2.x && ballX < player2.x + paddleWidth) {
+                ballOffY = -ballOffY;
+            }
+        }
+
+
+        ballX += ballOffX;
+        ballY += ballOffY;
+
+    }
+
+    function reset(){
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if(player1.score == 4){
+            player1.winner = true;
+            win();
+            return;
+        }
+
+        else if(player2.score ==4){
+            player2.winner = true;
+            win();
+            return;
+        }
+
+        player1.x =canvas.width / 2 - 20;
+        player1.y = 2;
+
+        player2.x =canvas.width / 2 - 20;
+        player2.y = canvas.height - 10;
+
+        ballX = canvas.width / 2;
+        ballY = canvas.height - 20;
+
+        ballOffX = 5;
+        ballOffY = -5;
+
+    }
+
+    function win(){
+        ctx.font="30px Georgia bold";
+        ctx.fillStyle="black";
+
+        if(player1.winner){
+            ctx.fillText("Player 1 Wins!", canvas.width/3, (canvas.height-30) /2 );
+            return;}
+        else{
+            ctx.fillText("Player 2 Wins!", canvas.width/3, (canvas.height-30) /2 );
+            return;
+        }
+    }
+
+
+    function drawScore(){
+        ctx.font="15px Georgia bold";
+        ctx.fillStyle="blue";
+        ctx.fillText("Player 1:", 5, 15 );
+        ctx.fillText(player1.score.toString(), 5, 30 );
+
+        ctx.font="15px Georgia bold";
+        ctx.fillStyle="green";
+        ctx.fillText("Player 2:", 5, canvas.height - 30 );
+        ctx.fillText(player2.score.toString() , 5, canvas.height - 15 );
+
+    }
+
+
+    function draw() {
+
+        if((player1.winner || player2.winner)){
+            cancelAnimationFrame(draw);
+            return;
+    }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawPaddle();
+        drawScore();
+        drawBall();
+
+        requestAnimationFrame(draw);
+    }
+
+    startCountdown();
+
+
+</script>
+
+
+</body>
+</html>
